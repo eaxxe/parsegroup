@@ -7,7 +7,10 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.filters import Command
 from aiogram import F
+from aiohttp import web
+from dotenv import load_dotenv
 
+load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 
 bot = Bot(token=TOKEN)
@@ -22,8 +25,8 @@ BASE_URL = "https://kbp.by/rasp/timetable/view_beta_kbp/?cat=group&id="
 
 
 def get_weekday_column():
-    weekday = datetime.datetime.now().weekday() + 1  # Пн=1
-    return weekday + 1  # +1 потому что первый столбец номер пары
+    weekday = datetime.datetime.now().weekday()  # Пн=0
+    return weekday  # первый столбец в таблице — Пн
 
 
 def parse_group(group_id, column_index):
@@ -111,8 +114,29 @@ async def schedule_handler(callback: CallbackQuery):
     await callback.message.answer(f"<pre>{response_text}</pre>", parse_mode="HTML")
 
 
+# --- Web сервер для Render ---
+async def handle(request):
+    return web.Response(text="Bot is running 🚀")
+
+
+async def start_web_server():
+    app = web.Application()
+    app.add_routes([web.get("/", handle)])
+
+    port = int(os.environ.get("PORT", 10000))
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    print(f"Web server running on port {port}")
+
+
 async def main():
-    await dp.start_polling(bot)
+    # Запускаем одновременно веб-сервер и polling бота
+    await asyncio.gather(
+        start_web_server(),
+        dp.start_polling(bot)
+    )
 
 
 if __name__ == "__main__":
