@@ -44,7 +44,8 @@ def parse_group(group_id, column_index):
     rows = table.find_all("tr")
     results = []
 
-    for row in rows[5:15]:  # строки 6–15
+    # строки с 6 по 15 (индексация с 0)
+    for row in rows[5:15]:
         cols = row.find_all("td")
         if len(cols) <= column_index:
             results.append("-")
@@ -52,13 +53,29 @@ def parse_group(group_id, column_index):
 
         cell = cols[column_index]
 
-        # ищем все ссылки в ячейке
-        links = cell.find_all("a")
-        if links:
-            # берём последнюю ссылку, там нужный кабинет
-            results.append(links[-1].text.strip())
-        else:
+        # ищем все пары в ячейке
+        pairs = cell.find_all("div", class_="pair")
+        if not pairs:
             results.append("-")
+            continue
+
+        # берем последнюю добавленную, если есть
+        selected_pair = None
+        for p in pairs:
+            if "added" in p.get("class", []):
+                selected_pair = p
+        if not selected_pair:
+            selected_pair = pairs[-1]  # иначе берем последнюю
+
+        # достаем кабинет
+        place_div = selected_pair.find("div", class_="place")
+        if place_div:
+            link = place_div.find("a")
+            if link and link.text.strip():
+                results.append(link.text.strip())
+                continue
+
+        results.append("-")
 
     return results
 
