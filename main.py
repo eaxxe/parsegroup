@@ -28,24 +28,28 @@ def get_weekday_column():
 
 def parse_group(group_id, column_index):
     url = BASE_URL + str(group_id)
-    response = requests.get(url, timeout=10)
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/120.0.0.0 Safari/537.36"
+    }
+    response = requests.get(url, headers=headers, timeout=10)
     soup = BeautifulSoup(response.text, "html.parser")
 
     table = soup.find("table")
-    rows = table.find_all("tr")
+    if not table:
+        return ["-"] * 10  # если таблицы нет, возвращаем пустые строки
 
+    rows = table.find_all("tr")
     results = []
 
-    # строки 6–15 (индексация с 0!)
-    for row in rows[5:15]:
+    for row in rows[5:15]:  # строки 6-15
         cols = row.find_all("td")
-
         if len(cols) <= column_index:
             results.append("-")
             continue
 
         cell = cols[column_index]
-
         link = cell.find("a")
         if link and link.text.strip():
             results.append(link.text.strip())
