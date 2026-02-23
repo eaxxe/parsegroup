@@ -44,17 +44,19 @@ def parse_group(group_id, column_index):
     rows = table.find_all("tr")
     results = []
 
-    # строки 6–15 (индексация с 0)
-    for row in rows[5:15]:
+    for row in rows[5:15]:  # строки 6–15
         cols = row.find_all("td")
         if len(cols) <= column_index:
             results.append("-")
             continue
 
         cell = cols[column_index]
-        link = cell.find("a")
-        if link and link.text.strip():
-            results.append(link.text.strip())
+
+        # ищем все ссылки в ячейке
+        links = cell.find_all("a")
+        if links:
+            # берём последнюю ссылку, там нужный кабинет
+            results.append(links[-1].text.strip())
         else:
             results.append("-")
 
